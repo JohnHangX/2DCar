@@ -77,6 +77,48 @@
     *
     * @ author:John
     * @ email:-----
+    * @ data: 2020-04-02 14:21
+    */
+    class Car extends Laya.Script {
+
+        constructor() {
+            super();
+            /** @prop {name:speed, tips:"提示文本", type:Number, default:null}*/
+            this.speed=10;
+        }
+
+        onAwake() {
+        }
+
+        onUpdate()
+        {
+            this.owner.y += this.speed;
+        }
+
+        Init(sign)
+        {
+            this.sign = sign;
+        }
+
+        onTriggerExit(other)
+        {
+            if(other.label == "BottomCollision")
+            {
+                this.owner.removeSelf();
+                this.recover();
+            }
+        }
+
+        recover()
+        {
+            Laya.Pool.recover(this.sign,this.owner);
+        }
+    }
+
+    /**
+    *
+    * @ author:John
+    * @ email:-----
     * @ data: 2020-04-02 10:58
     */
     class Player extends Laya.Script {
@@ -145,46 +187,16 @@
             return Math.round(value) + min;
         }
 
-        onTriggerEnter()
+        onTriggerEnter(other)
         {
-
-        }
-    }
-
-    /**
-    *
-    * @ author:John
-    * @ email:-----
-    * @ data: 2020-04-02 14:21
-    */
-    class Car extends Laya.Script {
-
-        constructor() {
-            super();
-            /** @prop {name:speed, tips:"提示文本", type:Number, default:null}*/
-            this.speed=0;
-        }
-
-        onAwake() {
-        }
-
-        onUpdate()
-        {
-            this.owner.y += this.speed;
-        }
-
-        Init(sign)
-        {
-            this.sign = sign;
-        }
-
-        onTriggerExit(other)
-        {
-            if(other.label == "BottomCollision")
+            if(other.label == "Coin")
             {
-                this.owner.removeSelf();
-                Laya.Pool.recover(this.sign,this.owner);
-                console.log("000");
+                other.owner.getComponent(Car).recover();
+                //得分
+            }
+            else if(other.label == "Car")
+            {
+                Laya.stage.event("GameOver");
             }
         }
     }
@@ -198,53 +210,61 @@
     class GameManager extends Laya.Script {
         constructor() {
             super();
-            /** @prop {name:car_1, tips:"提示文本", type:Prefab, default:null}*/
-            this.car_1 = null;
-            /** @prop {name:car_2, tips:"提示文本", type:Prefab, default:null}*/
-            this.car_2 = null;
 
             this.initXArr = [260, 450, 640, 820];
             this.carPrefabArr = [];
+            this.isGameStart = false;
+            this.carSpawnArr = [];
         }
 
         onAwake() {
             this.loadPrefab();
+            Laya.stage.on("StartGame", this, function(){this.isGameStart = true;});
+            Laya.stage.on("GameOver", this, function(){this.gameOver();});
         }
 
         loadPrefab()
         {
             
             var pathArr = [
-                "prefab/Car_1.json",
-                "prefab/Car_2.json",
+                
+                "prefab/Car_3.json",
+                "prefab/Coin.json",
+                // "prefab/Car_1.json",
+                // "prefab/Car_2.json",
             ];
             var infoArr = [];
             for(var i = 0; i < pathArr.length; i++)
             {
                 infoArr.push({url:pathArr[i], type:Laya.loader.PREFAB});
             }
+            console.log(infoArr);
             Laya.loader.load(infoArr, Laya.Handler.create(this, function(result){
                 for(var i = 0; i < pathArr.length; i++)
                 {
                     this.carPrefabArr.push(Laya.loader.getRes(pathArr[i]));
                 }
-                this.ranTime = this.getRandom(300, 800);
-                Laya.timer.loop(this.ranTime, this, function(){
-                    this.spawn();
-                    this.ranTime = this.getRandom(300, 800);
-                });
+                this.ranTime = this.getRandom(400, 900);
+                // Laya.timer.loop(this.ranTime, this, function(){
+                //     this.spawn();
+                //     this.ranTime = this.getRandom(400, 900);
+                // })
             }));
+            console.log(this.carPrefabArr);
         }
 
         spawn()
         {
+            if(this.isGameStart == false)
+                return;
             var y = -300;
             var x = this.initXArr[this.getRandom(0, this.initXArr.length - 1)];
             var carIndex = this.getRandom(0, this.carPrefabArr.length - 1);
             var car = Laya.Pool.getItemByCreateFun(carIndex.toString(), function(){return this.carPrefabArr[carIndex].create()}, this);
-            Laya.stage.addChild(car);
+            Laya.stage.getChildAt(0).addChild(car);
             car.pos(x, y);
             car.getComponent(Car).Init(carIndex.toString());
+            this.carSpawnArr.push(car);
         }
 
         /**
@@ -258,9 +278,11 @@
             return Math.round(value) + min;
         }
 
-        carRestore(prefab)
+        gameOver()
         {
-
+            this.carSpawnArr.forEach(element =>{
+                element.removeSelf();
+            });
         }
     }
 

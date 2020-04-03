@@ -1,3 +1,5 @@
+import Car from "./Car";
+
 /**
 *
 * @ author:John
@@ -70,8 +72,16 @@ export default class Player extends Laya.Script {
         return Math.round(value) + min;
     }
 
-    onTriggerEnter()
+    onTriggerEnter(other)
     {
-
+        if(other.label == "Coin")
+        {
+            other.owner.getComponent(Car).recover();
+            //得分
+        }
+        else if(other.label == "Car")
+        {
+            Laya.stage.event("GameOver");
+        }
     }
 }

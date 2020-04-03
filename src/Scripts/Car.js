@@ -9,7 +9,7 @@ export default class Car extends Laya.Script {
     constructor() {
         super();
         /** @prop {name:speed, tips:"提示文本", type:Number, default:null}*/
-        this.speed=0;
+        this.speed=10;
     }
 
     onAwake() {
@@ -30,7 +30,12 @@ export default class Car extends Laya.Script {
         if(other.label == "BottomCollision")
         {
             this.owner.removeSelf();
-            Laya.Pool.recover(this.sign,this.owner);
+            this.recover();
         }
+    }
+
+    recover()
+    {
+        Laya.Pool.recover(this.sign,this.owner);
     }
 }
